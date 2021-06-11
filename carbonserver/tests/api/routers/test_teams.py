@@ -28,6 +28,12 @@ TEAM_1 = {
     "organization_id": ORG_ID,
 }
 
+TEAM_WITH_NO_ORG = {
+    "id": TEAM_ID,
+    "name": "Data For Good Code Carbon",
+    "description": "Data For Good Code Carbon Team",
+}
+
 
 ORG_2 = {
     "id": TEAM_ID_2,
@@ -52,7 +58,7 @@ def client(custom_test_server):
     yield TestClient(custom_test_server)
 
 
-def test_add_org(client, custom_test_server):
+def test_add_team(client, custom_test_server):
     repository_mock = mock.Mock(spec=SqlAlchemyRepository)
     expected_team = TEAM_1
     repository_mock.add_team.return_value = SqlModelTeam(**TEAM_1)
@@ -65,7 +71,20 @@ def test_add_org(client, custom_test_server):
     assert actual_team == expected_team
 
 
-def test_get_organizations_by_id_returns_correct_org(client, custom_test_server):
+def test_add_team_with_no_org_links_to_data_for_good_org(client, custom_test_server):
+    repository_mock = mock.Mock(spec=SqlAlchemyRepository)
+    default_org_id = ORG_ID
+    repository_mock.add_team.return_value = SqlModelTeam(**TEAM_1)
+
+    with custom_test_server.container.team_repository.override(repository_mock):
+        response = client.put("/teams/", json=TEAM_TO_CREATE)
+        actual_team = response.json()
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert actual_team['organization_id'] == default_org_id
+
+
+def test_get_one_team_returns_correct_team(client, custom_test_server):
     repository_mock = mock.Mock(spec=SqlAlchemyRepository)
     expected_org = TEAM_1
     repository_mock.get_one_team.return_value = [
@@ -80,19 +99,19 @@ def test_get_organizations_by_id_returns_correct_org(client, custom_test_server)
     assert actual_org == expected_org
 
 
-def test_list_organizations_returns_all_orgs(client, custom_test_server):
+def test_list_teams_returns_all_teams(client, custom_test_server):
     repository_mock = mock.Mock(spec=SqlAlchemyRepository)
-    expected_org_1 = TEAM_1
-    expected_org_2 = ORG_2
-    expected_org_list = [expected_org_1, expected_org_2]
+    expected_team_1 = TEAM_1
+    expected_team_2 = ORG_2
+    expected_team_list = [expected_team_1, expected_team_2]
     repository_mock.list_teams.return_value = [
-        SqlModelTeam(**expected_org_1),
-        SqlModelTeam(**expected_org_2),
+        SqlModelTeam(**expected_team_1),
+        SqlModelTeam(**expected_team_2),
     ]
 
     with custom_test_server.container.team_repository.override(repository_mock):
         response = client.get("/teams/")
-        actual_org_list = response.json()
+        actual_team_list = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    assert actual_org_list == expected_org_list
+    assert actual_team_list == expected_team_list
