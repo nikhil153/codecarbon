@@ -32,7 +32,7 @@ def create_app() -> FastAPI:
 
 def init_container():
     container = ServerContainer()
-    container.wire(modules=[users])
+    container.wire(modules=[users, organizations, teams])
     return container
 
 
